@@ -1,847 +1,777 @@
-<!DOCTYPE html>
-
-<!-- index.html -->
+<!DOCTYPE html> <!-- index.html -->
 <!-- Three calculators together ... A) Water needed for given powder weight. B) Water and powder needed for given volume, C) Calculation for new liter weight. -->
-
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Slurry_Mixing_Calculator</title>
 
-    <title>Slurry_Mixing_Calculator</title>
+  <!-- PWA -->
+  <link rel="manifest" href="/Slurry_Mixing_Calculator/manifest.json">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="/Slurry_Mixing_Calculator/icons/icon-192.png">
 
-    <!-- PWA -->
-    <link rel="manifest" href="/Slurry_Mixing_Calculator/manifest.json">
-    <meta name="theme-color" content="#ffffff">
-    <link rel="icon" href="/Slurry_Mixing_Calculator/icons/icon-192.png">
+  <!-- Service worker registration -->
+  <script>
+    /* IMPORTANT:
+       - This must match the filename of your service worker.
+       - For Version 2, the file is sw-v2.js.
+       - When you release Version 2, rename to sw-v2.js and update this line.
+    */
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/Slurry_Mixing_Calculator/sw-v1.js").then(reg => {
+        reg.onupdatefound = () => {
+          const newWorker = reg.installing;
+          newWorker.onstatechange = () => {
+            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+              const refresh = confirm("A new version of Slurry Calculator is available. Reload now?");
+              if (refresh) window.location.reload();
+            }
+          };
+        };
+      });
+    }
+  </script>
 
-    <!-- Service worker registration -->
-    <script>
+  <!-- Page CSS -->
+  <style>
+    /* Base layout */
+    html, body {
+      margin: 0;
+      padding: 0;
+    }
 
-	/*
- 	 IMPORTANT:
- 	 - This must match the filename of your service worker.
- 	 - For Version 2, the file is sw-v2.js.
- 	 - When you release Version 2, rename to sw-v2.js and update this line.
-	*/
+    body {
+      font-family: "Arial", sans-serif;
+    }
 
-        if ("serviceWorker" in navigator) {
-            navigator.serviceWorker.register("/Slurry_Mixing_Calculator/sw-v1.js").then(reg => {
-                reg.onupdatefound = () => {
-                    const newWorker = reg.installing;
-                    newWorker.onstatechange = () => {
-                        if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-                            const refresh = confirm("A new version of Slurry Calculator is available. Reload now?");
-                            if (refresh) window.location.reload();
-                        }
-                    };
-                };
-            });
-        }
-    </script>
+    /* Table layout: keep original width but make it responsive */
+    table {
+      border-collapse: collapse;
+      margin: 0 auto;
+      max-width: 404px;
+      width: 100%;
+    }
 
-    <!-- Your CSS goes here -->
-    <style>
-        /* Reduce row height */
-        table td {
-            padding: 0 2pt;
-        }
-        table td p {
-            margin: 0;
-            line-height: 1.0;
-	    padding: 0 2pt;
-        }
-        table tr {
-            height: 12pt;
-	    padding: 0 2pt;
-       }
+    /* Reduce row height and unify cell spacing */
+    table td {
+      padding: 0 2pt;
+    }
 
-  
-/* Center the input inside table cells */
-td input.input-cell {
-    display: block;        /* allows centering inside the cell */
-    margin: 0 auto;        /* horizontal centering */
-    text-align: center;    /* centers the text inside the input */
-    width: 100%;            /* optional: keeps it neat */
-   /* font-family: monospace;*/ /* optional: helps decimal alignment */
-}
+    table td p {
+      margin: 0;
+      line-height: 1.0;
+      padding: 0 2pt;
+    }
 
+    table tr {
+      height: 12pt;
+    }
 
-    </style>
+    /* Inputs: same width, fill cell, mobile-friendly */
+    td input.input-cell {
+      display: block;
+      margin: 0 auto;
+      text-align: center;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    /* Output cells: align numbers consistently */
+    .output-cell {
+      display: inline-block;
+      width: 100%;
+      text-align: center;
+      box-sizing: border-box;
+    }
+
+    /* Offline banner spacing with main content */
+    #offlineBanner {
+      width: 100%;
+    }
+
+    /* Mobile tweaks */
+    @media (max-width: 480px) {
+      body {
+        font-size: 14px;
+      }
+
+      table {
+        width: 100%;
+      }
+    }
+  </style>
 </head>
 
-
 <body>
-
-<div id="offlineBanner"
-     style="display:none; background:#ffcc00; padding:6px; text-align:center;
-            font-size:0.9rem; width:100%; position:fixed; top:0; left:0; z-index:9999;">
+  <div id="offlineBanner" style="display:none; background:#ffcc00; padding:6px; text-align:center; font-size:0.9rem; width:100%; position:fixed; top:0; left:0; z-index:9999;">
     You are offline. Some features may be limited.
-</div>
-
- <!-- xxxxxxxxxxxxxxxxxxxxxxx START OF NEW CODE xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -->
-
-<div align="center">
-
-<table border="0" cellspacing="0" cellpadding="0" width="404" style="width:303.0pt;border-collapse:collapse";"height:10pt">
- 		
-<tbody>
-
-			<tr style="height:10pt">
-  				<td width="404" nowrap="" colspan="2" style="width:303.0pt;border:solid black 1.0pt;background:#BAE18F;padding: 0 2pt;height:10pt">
-  					<p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
-						<b><span style="font-size:12.0pt;font-family:&quot;Arial&quot;,sans-serif;color:black">Slurry Calculations For Glazes &amp; Casting Slips</span></b>
-					</p>
- 		 		</td>
- 			</tr>
- 
-			<tr style="height:10pt">
-  				<td width="404" nowrap="" colspan="2" style="width:303.0pt;border:solid black 1.0pt;border-top:none;background:#BAE18F;padding: 0 2pt;height:10.0pt">
-  					<p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal"><b><span style="font-family:&quot;Arial&quot;
-						,sans-serif;color:black">Edit Numbers in Yellow Cells - KILOS</span></b>
-					</p>
-  				</td>
- 			</tr>
- 
- <!-- B3 — INPUT CELL -->
-
-<tr style="height:10pt">
-	<td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt;  border-top:none;background:yellow;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
- 		<p style="margin-bottom:0cm;line-height:normal">
-			<b><span style="font-size:10.0pt;font-family:&quot;Arial&quot;,sans-serif;color:black">&nbsp;Powder Density&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-				( For Calculations A , B , C )</span>
-			</b>
-		</p>
-  	</td>
-
-  	<td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt;
-		background:yellow;padding: 0 2pt;height:10pt">
-  		<p align="center" style="margin-bottom:0cm;text-align:center; line-height:normal">
-			<span style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif; color:black">
-				<input type="text" inputmode="decimal" class="input-cell comma-convert" id="B3" value="2.613" oninput="calc()"></span>
-   		</p>
-  	</td>
- </tr>
-
-<!-- B4 — INPUT CELL … B5? -->
-
- <tr style="height:10pt">
-  	<td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; 	border-top:none;background:yellow;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-  		<p style="margin-bottom:0cm;line-height:normal">
-			<b><span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp;Target Litre Weight ( For Calculations A , B , C )</span>
-			</b>
-		</p>
-  	</td>
-  
-	<td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt;
-		background:yellow;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-    		<p align="center" style="margin-bottom:0cm;text-align:center; line-height:normal">
-			<span style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif; color:black">
-				<input type="text" inputmode="decimal" class="input-cell comma-convert" id="B5" value="1.800" oninput="calc()">
-			</span>
-		</p>
-  	</td>
- </tr>
-
-<!-- Calculation A -->
-
- <tr style="height:15.0pt">
-  	<td width="404" nowrap="" colspan="2" style="width:303.0pt;	border:solid #111111 1.0pt;	border-top:none;background:#F0B64E;	padding:0cm 5.4pt 0cm 5.4pt; height:15.0pt">
-  		<p align="center" style="margin-bottom:0cm;text-align:center; line-height:normal">
-			<b><span style="font-family:&quot;Arial&quot;,sans-serif; color:black">Calculation A</span>
-			</b>
-		</p>
-  	</td>
- </tr>
-
-<!-- Water Needed For Given Powder Weight -->
-
- <tr style="height:15.0pt">
-  	<td width="404" nowrap="" colspan="2" style="width:303.0pt;border:solid #111111 1.0pt; border-top:none;background:#F2A068;padding:0cm 5.4pt 0cm 5.4pt;height:10.0pt">
-  	<p align="center" style="margin-bottom:0cm;text-align:center; line-height:normal"><b><span style="font-family:&quot;Arial&quot;,sans-serif;
-	color:black">Water Needed For Given Powder Weight</span></b></p>
-  	</td>
- </tr>
-
-<!-- B7 — INPUT CELL … B8? -->
-
- <tr style="height:10pt">
-  	<td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; 	border-top:none;background:yellow;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-  		<p style="margin-bottom:0cm;line-height:normal">
-		<b><span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp;Kilos of POWDER Already Weighed</span></b>
-		</p>
-  	</td>
-
-  	<td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt;
-		background:yellow;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-<!--    		<p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">	-->
-      		<span style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif;color:black">
-		<input type="text" inputmode="decimal" class="input-cell comma-convert" id="B8" value="1.296" oninput="calc()">
-		</span>
-   		 </p>
- 	 </td>
- </tr>
- 
-<!-- B8 — OUTPUT CELL … B9?  -->
-
-<tr style="height:10pt">
-	<td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#00FF2B;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-  		<p style="margin-bottom:0cm;line-height:normal">
-			<b><span style="font-size:10.0pt;font-family:&quot;Arial&quot;,sans-serif;color:black">&nbsp;Kilos of WATER to Weigh &amp; Mix</span> </b>
-		</p>
-  	</td>
-  
-  	<td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt;
-		background:#00FF2B;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-		<p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">  
-      			<b><span id="B9" class="output-cell" style="font-size:10.0pt;font-family:'Arial',sans-serif;color:black;font-weight:bold;">0.504</span>
-			</b>
-    		</p>
-	</td>
- </tr>
-
-<!-- B9 — OUTPUT CELL … B10  -->
-
-<tr style="height:10pt">
-  	<td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-  		<p style="margin-bottom:0cm;line-height:normal">
-			<span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp;Litres of Casting Slip or Glaze</span>
-		</p>
-  	</td>
-
-  	<td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt;
-		background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-		<p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
-      			<span id="B10" class="output-cell" style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif;color:black;">1.000</span>
-    		</p>
-	</td>
- </tr>
-
-<!-- B10 — Calculation B  -->
-
- <tr style="height:15.0pt">
-  	<td width="404" nowrap="" colspan="2" style="width:303.0pt;border:solid #111111 1.0pt; border-top:none;background:#F0B64E;padding:0cm 5.4pt 0cm 5.4pt;height:10.0pt">
-  		<p align="center" style="margin-bottom:0cm;text-align:center; line-height:normal">
-			<b>	<span style="font-family:&quot;Arial&quot;,sans-serif; color:black">Calculation B</span></b>
-		</p>
-  	</td>
- </tr>
-
-<!-- B11 — Water & Powder Needed For Given Volume  -->
-
- <tr style="height:15.0pt">
-  	<td width="404" nowrap="" colspan="2" style="width:303.0pt;border:solid #111111 1.0pt; border-top:none;background:#F2A068;padding:0cm 5.4pt 0cm 5.4pt;height:10.0pt">
- 		 <p align="center" style="margin-bottom:0cm;text-align:center; line-height:normal">
-			<b><span style="font-family:&quot;Arial&quot;,sans-serif; color:black">Water &amp; Powder Needed For Given Volume</span></b>
-		</p>
-  	</td>
- </tr>
-
-<!-- B12 — INPUT CELL … B13 -->
-
- <tr style="height:10pt">
-  	<td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:yellow;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-  		<p style="margin-bottom:0cm;line-height:normal">
-			<b><span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp;Litres Of Casting Slip/Glaze Required</span></b>
-		</p>
-  	</td>
-
-  	<td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt;
-		background:yellow;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-    	<p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
-      		<span style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif;color:black">
-        		<input type="text" inputmode="decimal" class="input-cell comma-convert" id="B13" value="10.000" oninput="calc()">
-      		</span>
-    	</p>
-	</td>
- </tr>
-
-<!-- B13 — OUTPUT CELL … B14  -->
-
- <tr style="height:10pt">
-  	<td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#00FF2B;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-  		<p style="margin-bottom:0cm;line-height:normal"><b><span style="font-size:10.0pt;font-family:&quot;Arial&quot;,sans-serif;color:black">&nbsp;
-			Kilos of POWDER to Weigh &amp; Mix</span></b>
-		</p>
-  	</td>
-
-    	<td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt;
-			background:#00FF2B;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-    		<p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
-     		 	<b><span id="B14" class="output-cell" style="font-size:10.0pt;font-family:'Arial',sans-serif;color:black;font-weight:bold;">12.960</span></b>
-    		</p>
-	</td>
- </tr>
-
-<!-- B14 — OUTPUT CELL … B15  -->
-
- <tr style="height:10pt">
-  	<td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#00FF2B;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-  		<p style="margin-bottom:0cm;line-height:normal">
-			<b><span style="font-size:10.0pt;font-family:&quot;Arial&quot;,sans-serif;color:black">&nbsp;Kilos of WATER to Weigh &amp; Mix</span></b>
-		</p>
-  	</td>
-
-
-  	<td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt;
-		background:#00FF2B;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-		<p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
-      			<b><span id="B15" class="output-cell" style="font-size:10.0pt;font-family:'Arial',sans-serif;color:black;font-weight:bold;">5.040</span></b>
-    		</p>
-	</td>
- </tr>
-
-<!-- B15 — Calculation C  -->
-
- <tr style="height:15.0pt">
-  	<td width="404" nowrap="" colspan="2" style="width:303.0pt;border:solid #111111 1.0pt; border-top:none;background:#F0B64E;padding:0cm 5.4pt 0cm 5.4pt;height:10.0pt">
-  		<p align="center" style="margin-bottom:0cm;text-align:center; line-height:normal"><b><span style="font-family:&quot;Arial&quot;,sans-serif; color:black">
-			Calculation C</span></b></p>
-  	</td>
- </tr>
-
-<!-- B16 — Calculation For NEW Target Litre Weight  -->
-
- <tr style="height:15.0pt">
-  	<td width="404" nowrap="" colspan="2" style="width:303.0pt;border:solid #111111 1.0pt; border-top:none;background:#F2A068;padding:0cm 5.4pt 0cm 5.4pt;height:10.0pt">
-  		<p align="center" style="margin-bottom:0cm;text-align:center; line-height:normal"><b><span style="font-family:&quot;Arial&quot;,sans-serif; color:black">
-			Calculation For NEW Target Litre Weight</span></b>
-	</p>
-  	</td>
- </tr>
-
-<!-- B17 — OUTPUT CELL … B18?  -->
-
- <tr style="height:10pt">
-  	<td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:yellow;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-  		<p style="margin-bottom:0cm;line-height:normal"><b><span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp;
-			Kilos of Casting Slip or Glaze</span></b>
-      		</p>
-  	</td>
-
- 	 <td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt;
-		 background:yellow;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-		<p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
-     			 <span style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif;color:black">
-        			<input type="text" inputmode="decimal" class="input-cell comma-convert" id="B18" value="10.000" oninput="calc()">
-      			</span>
-    		</p>
-	</td>
- </tr>
-
-<!-- B18 — OUTPUT CELL … B19?  -->
-
- <tr style="height:10pt">
-  	<td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:yellow;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-      		<p style="margin-bottom:0cm;line-height:normal"><b><span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp;
-				Litre Weight Measured</span></b>
-		</p>
-  	</td>
-
- 	 <td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt;
-		 background:yellow;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-		<p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
-      			<span style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif;color:black">
-	        		<input type="text" inputmode="decimal" class="input-cell comma-convert" id="B19" value="1.700" oninput="calc()">
-      			</span>
-   	 	</p>
-  	</td>
- </tr>
-
-<!-- B19 —  OUTPUT CELL … B21?  -->
-
- <tr style="height:10pt">
-  	<td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#00FF2B;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-  		<p align="center" style="margin-bottom:0cm;text-align:center; line-height:normal"><b><span style="font-size:10.0pt;font-family:&quot;Arial&quot;
-			,sans-serif; color:black">&nbsp;Water to Add or Remove</span></b>
-		</p>
-  	</td>
-
-  	<td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;
-																					border-right:solid #111111 1.0pt;
-																					background:#00FF2B;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-		<p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
-      			<b><span id="B21" class="output-cell" style="font-size:10.0pt;font-family:'Arial',sans-serif;color:red;font-weight:bold;">-0.735</span></b>
-    		</p>
-	</td>
- </tr>
-
-<!-- B20 —  OUTPUT CELL … B22?  -->
-
- <tr style="height:10pt">
-  	<td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-  		<p style="margin-bottom:0cm;line-height:normal"><span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp;
-			Total Weight of Powder in Slurry</span>
-		</p>
-  	</td>
-  
-  	<td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt;
-		background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-		<p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
-      			<span id="B22" class="output-cell" style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif;color:black;">6.670</span>
-    		</p>
- 	</td>
- </tr>
-
-<!-- B21 —  OUTPUT CELL … B23?  -->
-
- <tr style="height:10pt">
-  	<td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-  		<p style="margin-bottom:0cm;line-height:normal"><span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp;
-			Total Weight of Water in Slurry</span>
-			</p>
-  	</td>
-  
-  	<td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt;
-		background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-		<p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
-      			<span id="B23" class="output-cell" style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif;color:black;">2.594</span>
-    		</p>
-	</td>
- </tr>
-
-<!-- B22 —  OUTPUT CELL … B24?  -->
-
- <tr style="height:10pt">
-  	<td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-  		<p style="margin-bottom:0cm;line-height:normal"><span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp;
-			Total Weight of Powder + Water in Slurry</span>
-		</p>
-  	</td>
-
-  	<td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt;
-		background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-		<p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
-      			<span id="B24" class="output-cell" style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif;color:black;">9.265</span>
-    		</p>
- 	</td>
- </tr>
-
-<!-- B23 —  OUTPUT CELL … B25?  -->
-
- <tr style="height:10pt">
-	<td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-  		<p style="margin-bottom:0cm;line-height:normal"><span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp;
-			Litres of Casting Slip or Glaze</span>
-		</p>
-  	</td>
-  
-  	<td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt;
-		background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-		<p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
-		<span id="B25" class="output-cell" style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif;color:black;">5.147</span>
-    		</p>
-  	</td>
- </tr>
-
-<!-- B24 —  EMPTY LINE   -->
-
- <tr style="height:2.25pt">
-  	<td width="404" nowrap="" colspan="2" valign="bottom" style="width:303.0pt;border:solid #111111 1.0pt;border-top:none;background:#F0B64E;padding:0cm 5.4pt 0cm 5.4pt;
-		height:2.25pt">
-  		<p style="margin-bottom:0cm;line-height:normal"><span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp;</span>
-		</p>
-  	</td>
- </tr>
-
-<!-- B25 —  OUTPUT CELL … B27?  -->
-
- <tr style="height:10pt">
-  	<td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#00FF2B;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-  		<p align="center" style="margin-bottom:0cm;text-align:center; line-height:normal"><b><span style="font-size:10.0pt;font-family:&quot;Arial&quot;,sans-serif;
-																								 color:black">&nbsp;Powder to Add or Remove</span></b>
-		</p>
-  	</td>
-
-  	<td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt;
-		background:#00FF2B;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-  		<p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
-      			<b><span id="B27" class="output-cell" style="font-size:10.0pt;font-family:'Arial',sans-serif;color:black;font-weight:bold;">1.891</span></b>
-   		</p>
-  	</td>
- </tr>
-
-<!-- B26 —  OUTPUT CELL … B28?  -->
-
- <tr style="height:10pt">
-  	<td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-  		<p style="margin-bottom:0cm;line-height:normal"><span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">
-			&nbsp;Total Weight of Powder in Slurry</span>
-		</p>
- 	 </td>
-
-   	<td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt;
-		background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-		<p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
-       			<span id="B28" class="output-cell" style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif;color:black;">8.561</span>
-    		</p>
-  	</td>
- </tr>
-
-<!-- B27 —  OUTPUT CELL … B29?  -->
-
- <tr style="height:10pt">
-   	<td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-  		<p style="margin-bottom:0cm;line-height:normal">
-					<span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">
-			&nbsp;Total Weight of Water in Slurry</span>
-		</p>
-  	</td>
-
-  	<td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt;
-		background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-		<p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
-      			<span id="B29" class="output-cell" style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif;color:black;">3.330</span>
-    		</p>
-	  </td>
- </tr>
-
-<!-- B28 —  OUTPUT CELL … B30?  -->
-
- <tr style="height:10pt">
-  	<td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-  		<p style="margin-bottom:0cm;line-height:normal"><span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp;
-			Total Weight of Powder + Water in Slurry</span>
-		</p>
-  	</td>
-
-
-   	<td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt;
-		background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-		<p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
-      			<span id="B30" class="output-cell" style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif;color:black;">11.891</span>
-    		</p>
-	</td>
- </tr>
-
-<!-- B29 —  OUTPUT CELL … B31?  -->
-
- <tr style="height:10pt">
-  	<td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-  		<p style="margin-bottom:0cm;line-height:normal"><span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp;
-			Litres of Casting Slip or Glaze</span>
-		</p>
-  	</td>
-  
-	<td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt;
-		background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
-  		<p align="center" style="margin-bottom:0cm;text-align:center; line-height:normal">
-			<span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif; color:black">6.606 </span>
-		</p>
-  	</td>
- </tr>
-
-<!-- B30 —  FOTTER -->
-
- <tr style="height:45.75pt">
- 	 <td width="404" colspan="2" style="width:303.0pt;border:solid black 1.0pt; border-top:none;background:#E2EFD9;padding:0cm 5.4pt 0cm 5.4pt;height:45.75pt">
-		<p align="center" style="margin-bottom:0cm;text-align:center; line-height:normal">
-			<span style="font-size:10.0pt;font-family:&quot;Arial&quot;,sans-serif; color:black"><a href="mailto:nicholas.glazer@gmail.com">
-				<span style="color:black;text-decoration:none">nicholas.glazer@gmail.com</span></a></span>
-			<span style="font-size:10.0pt;font-family:&quot;Arial&quot;,sans-serif; color:black;text-decoration:none">
-				<br>Grad.I.Ceram … IoM3<br>WhatsApp: +46 739 315 028</span>
-           	</p>
-  	</td>
- </tr>
-
-</tbody>	
-
-</table>
-
-</td>
-
-</body>
-
-<!--    </html>    -->
-
-
-
- <!-- xxxxxxxxxxxxxxxxxxxxxxx END OF NEW CODE xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -->
-
-   
-  
-
- <!-- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -->
-<!-- Force Update Button -->
-<div style="text-align:center; margin-top:12px;">
-  <button onclick="forceUpdate()" 
-          style="padding:6px 12px; font-size:0.9rem; border-radius:6px; border:1px solid #888; background:#e6e6e6;">
-    Force App Update
-  </button>
-</div>
-
-<!-- Version number -->
-
-<!--  <div style="text-align:center; font-size:0.8rem; color:#666; margin-top:10px;">  -->
-<!--  Version 1  -->
-<!--  </div>  -->
-
-<div id="appVersion" 
-     style="text-align:center; font-size:0.8rem; color:#666; margin-top:10px;">
-  Version …
-</div>
- <!-- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -->
-
-
-<script>
-
-// Attach one listener to the entire document
-document.addEventListener('keydown', function(e) {
-  // 1. Check if the active element has your specific class
-  if (e.target && e.target.classList.contains('comma-convert')) {
-    
-    // 2. Detect if the comma key (188) or numpad comma (110) was pressed
-    if (e.key === ',' || e.keyCode === 188 || e.keyCode === 110) {
-      
-      // 3. Prevent the comma from being typed
-      e.preventDefault();
-      
-      // 4. Manually insert a dot at the current cursor position
-      const start = e.target.selectionStart;
-      const end = e.target.selectionEnd;
-      const value = e.target.value;
-
-      e.target.value = value.slice(0, start) + "." + value.slice(end);
-
-      // 5. Put the cursor back in the correct spot (after the new dot)
-      e.target.selectionStart = e.target.selectionEnd = start + 1;
-    }
-  }
-})
-    
-function calc() {
-    // helpers
-    const get = (id) => {
+  </div>
+
+  <!-- xxxxxxxxxxxxxxxxxxxxxxx START OF NEW CODE xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -->
+  <div align="center">
+    <table border="0" cellspacing="0" cellpadding="0" width="404" style="width:303.0pt;border-collapse:collapse";"height:10pt">
+      <tbody>
+        <tr style="height:10pt">
+          <td width="404" nowrap="" colspan="2" style="width:303.0pt;border:solid black 1.0pt;background:#BAE18F;padding: 0 2pt;height:10pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
+              <b><span style="font-size:12.0pt;font-family:&quot;Arial&quot;,sans-serif;color:black">Slurry Calculations For Glazes &amp; Casting Slips</span></b>
+            </p>
+          </td>
+        </tr>
+
+        <tr style="height:10pt">
+          <td width="404" nowrap="" colspan="2" style="width:303.0pt;border:solid black 1.0pt;border-top:none;background:#BAE18F;padding: 0 2pt;height:10.0pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
+              <b><span style="font-family:&quot;Arial&quot; ,sans-serif;color:black">Edit Numbers in Yellow Cells - KILOS</span></b>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B3 — INPUT CELL -->
+        <tr style="height:10pt">
+          <td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:yellow;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p style="margin-bottom:0cm;line-height:normal">
+              <b><span style="font-size:10.0pt;font-family:&quot;Arial&quot;,sans-serif;color:black">&nbsp;Powder Density&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ( For Calculations A , B , C )</span></b>
+            </p>
+          </td>
+          <td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt; background:yellow;padding: 0 2pt;height:10pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center; line-height:normal">
+              <span style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif; color:black">
+                <input type="text" inputmode="decimal" class="input-cell comma-convert" id="B3" value="2.613" oninput="calc()">
+              </span>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B4 — INPUT CELL … B5? -->
+        <tr style="height:10pt">
+          <td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:yellow;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p style="margin-bottom:0cm;line-height:normal">
+              <b><span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp;Target Litre Weight ( For Calculations A , B , C )</span></b>
+            </p>
+          </td>
+          <td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt; background:yellow;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center; line-height:normal">
+              <span style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif; color:black">
+                <input type="text" inputmode="decimal" class="input-cell comma-convert" id="B5" value="1.800" oninput="calc()">
+              </span>
+            </p>
+          </td>
+        </tr>
+
+        <!-- Calculation A -->
+        <tr style="height:15.0pt">
+          <td width="404" nowrap="" colspan="2" style="width:303.0pt; border:solid #111111 1.0pt; border-top:none;background:#F0B64E; padding:0cm 5.4pt 0cm 5.4pt; height:15.0pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center; line-height:normal">
+              <b><span style="font-family:&quot;Arial&quot;,sans-serif; color:black">Calculation A</span></b>
+            </p>
+          </td>
+        </tr>
+
+        <!-- Water Needed For Given Powder Weight -->
+        <tr style="height:15.0pt">
+          <td width="404" nowrap="" colspan="2" style="width:303.0pt;border:solid #111111 1.0pt; border-top:none;background:#F2A068;padding:0cm 5.4pt 0cm 5.4pt;height:10.0pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center; line-height:normal">
+              <b><span style="font-family:&quot;Arial&quot;,sans-serif; color:black">Water Needed For Given Powder Weight</span></b>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B7 — INPUT CELL … B8? -->
+        <tr style="height:10pt">
+          <td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:yellow;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p style="margin-bottom:0cm;line-height:normal">
+              <b><span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp;Kilos of POWDER Already Weighed</span></b>
+            </p>
+          </td>
+          <td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt; background:yellow;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <!-- <p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal"> -->
+            <span style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif;color:black">
+              <input type="text" inputmode="decimal" class="input-cell comma-convert" id="B8" value="1.296" oninput="calc()">
+            </span>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B8 — OUTPUT CELL … B9? -->
+        <tr style="height:10pt">
+          <td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#00FF2B;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p style="margin-bottom:0cm;line-height:normal">
+              <b><span style="font-size:10.0pt;font-family:&quot;Arial&quot;,sans-serif;color:black">&nbsp;Kilos of WATER to Weigh &amp; Mix</span></b>
+            </p>
+          </td>
+          <td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt; background:#00FF2B;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
+              <b><span id="B9" class="output-cell" style="font-size:10.0pt;font-family:'Arial',sans-serif;color:black;font-weight:bold;">0.504</span></b>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B9 — OUTPUT CELL … B10 -->
+        <tr style="height:10pt">
+          <td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p style="margin-bottom:0cm;line-height:normal">
+              <span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp;Litres of Casting Slip or Glaze</span>
+            </p>
+          </td>
+          <td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt; background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
+              <span id="B10" class="output-cell" style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif;color:black;">1.000</span>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B10 — Calculation B -->
+        <tr style="height:15.0pt">
+          <td width="404" nowrap="" colspan="2" style="width:303.0pt;border:solid #111111 1.0pt; border-top:none;background:#F0B64E;padding:0cm 5.4pt 0cm 5.4pt;height:10.0pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center; line-height:normal">
+              <b><span style="font-family:&quot;Arial&quot;,sans-serif; color:black">Calculation B</span></b>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B11 — Water & Powder Needed For Given Volume -->
+        <tr style="height:15.0pt">
+          <td width="404" nowrap="" colspan="2" style="width:303.0pt;border:solid #111111 1.0pt; border-top:none;background:#F2A068;padding:0cm 5.4pt 0cm 5.4pt;height:10.0pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center; line-height:normal">
+              <b><span style="font-family:&quot;Arial&quot;,sans-serif; color:black">Water &amp; Powder Needed For Given Volume</span></b>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B12 — INPUT CELL … B13 -->
+        <tr style="height:10pt">
+          <td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:yellow;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p style="margin-bottom:0cm;line-height:normal">
+              <b><span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp;Litres Of Casting Slip/Glaze Required</span></b>
+            </p>
+          </td>
+          <td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt; background:yellow;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
+              <span style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif;color:black">
+                <input type="text" inputmode="decimal" class="input-cell comma-convert" id="B13" value="10.000" oninput="calc()">
+              </span>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B13 — OUTPUT CELL … B14 -->
+        <tr style="height:10pt">
+          <td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#00FF2B;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p style="margin-bottom:0cm;line-height:normal">
+              <b><span style="font-size:10.0pt;font-family:&quot;Arial&quot;,sans-serif;color:black">&nbsp; Kilos of POWDER to Weigh &amp; Mix</span></b>
+            </p>
+          </td>
+          <td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt; background:#00FF2B;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
+              <b><span id="B14" class="output-cell" style="font-size:10.0pt;font-family:'Arial',sans-serif;color:black;font-weight:bold;">12.960</span></b>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B14 — OUTPUT CELL … B15 -->
+        <tr style="height:10pt">
+          <td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#00FF2B;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p style="margin-bottom:0cm;line-height:normal">
+              <b><span style="font-size:10.0pt;font-family:&quot;Arial&quot;,sans-serif;color:black">&nbsp;Kilos of WATER to Weigh &amp; Mix</span></b>
+            </p>
+          </td>
+          <td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt; background:#00FF2B;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
+              <b><span id="B15" class="output-cell" style="font-size:10.0pt;font-family:'Arial',sans-serif;color:black;font-weight:bold;">5.040</span></b>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B15 — Calculation C -->
+        <tr style="height:15.0pt">
+          <td width="404" nowrap="" colspan="2" style="width:303.0pt;border:solid #111111 1.0pt; border-top:none;background:#F0B64E;padding:0cm 5.4pt 0cm 5.4pt;height:10.0pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center; line-height:normal">
+              <b><span style="font-family:&quot;Arial&quot;,sans-serif; color:black"> Calculation C</span></b>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B16 — Calculation For NEW Target Litre Weight -->
+        <tr style="height:15.0pt">
+          <td width="404" nowrap="" colspan="2" style="width:303.0pt;border:solid #111111 1.0pt; border-top:none;background:#F2A068;padding:0cm 5.4pt 0cm 5.4pt;height:10.0pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center; line-height:normal">
+              <b><span style="font-family:&quot;Arial&quot;,sans-serif; color:black"> Calculation For NEW Target Litre Weight</span></b>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B17 — OUTPUT CELL … B18? -->
+        <tr style="height:10pt">
+          <td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:yellow;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p style="margin-bottom:0cm;line-height:normal">
+              <b><span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp; Kilos of Casting Slip or Glaze</span></b>
+            </p>
+          </td>
+          <td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt; background:yellow;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
+              <span style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif;color:black">
+                <input type="text" inputmode="decimal" class="input-cell comma-convert" id="B18" value="10.000" oninput="calc()">
+              </span>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B18 — OUTPUT CELL … B19? -->
+        <tr style="height:10pt">
+          <td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:yellow;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p style="margin-bottom:0cm;line-height:normal">
+              <b><span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp; Litre Weight Measured</span></b>
+            </p>
+          </td>
+          <td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt; background:yellow;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
+              <span style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif;color:black">
+                <input type="text" inputmode="decimal" class="input-cell comma-convert" id="B19" value="1.700" oninput="calc()">
+              </span>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B19 — OUTPUT CELL … B21? -->
+        <tr style="height:10pt">
+          <td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#00FF2B;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center; line-height:normal">
+              <b><span style="font-size:10.0pt;font-family:&quot;Arial&quot; ,sans-serif; color:black">&nbsp;Water to Add or Remove</span></b>
+            </p>
+          </td>
+          <td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt; background:#00FF2B;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
+              <b><span id="B21" class="output-cell" style="font-size:10.0pt;font-family:'Arial',sans-serif;color:red;font-weight:bold;">-0.735</span></b>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B20 — OUTPUT CELL … B22? -->
+        <tr style="height:10pt">
+          <td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p style="margin-bottom:0cm;line-height:normal">
+              <span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp; Total Weight of Powder in Slurry</span>
+            </p>
+          </td>
+          <td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt; background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
+              <span id="B22" class="output-cell" style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif;color:black;">6.670</span>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B21 — OUTPUT CELL … B23? -->
+        <tr style="height:10pt">
+          <td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p style="margin-bottom:0cm;line-height:normal">
+              <span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp; Total Weight of Water in Slurry</span>
+            </p>
+          </td>
+          <td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt; background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
+              <span id="B23" class="output-cell" style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif;color:black;">2.594</span>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B22 — OUTPUT CELL … B24? -->
+        <tr style="height:10pt">
+          <td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p style="margin-bottom:0cm;line-height:normal">
+              <span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp; Total Weight of Powder + Water in Slurry</span>
+            </p>
+          </td>
+          <td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt; background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
+              <span id="B24" class="output-cell" style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif;color:black;">9.265</span>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B23 — OUTPUT CELL … B25? -->
+        <tr style="height:10pt">
+          <td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p style="margin-bottom:0cm;line-height:normal">
+              <span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp; Litres of Casting Slip or Glaze</span>
+            </p>
+          </td>
+          <td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt; background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
+              <span id="B25" class="output-cell" style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif;color:black;">5.147</span>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B24 — EMPTY LINE -->
+        <tr style="height:2.25pt">
+          <td width="404" nowrap="" colspan="2" valign="bottom" style="width:303.0pt;border:solid #111111 1.0pt;border-top:none;background:#F0B64E;padding:0cm 5.4pt 0cm 5.4pt; height:2.25pt">
+            <p style="margin-bottom:0cm;line-height:normal">
+              <span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp;</span>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B25 — OUTPUT CELL … B27? -->
+        <tr style="height:10pt">
+          <td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#00FF2B;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center; line-height:normal">
+              <b><span style="font-size:10.0pt;font-family:&quot;Arial&quot;,sans-serif; color:black">&nbsp;Powder to Add or Remove</span></b>
+            </p>
+          </td>
+          <td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt; background:#00FF2B;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
+              <b><span id="B27" class="output-cell" style="font-size:10.0pt;font-family:'Arial',sans-serif;color:black;font-weight:bold;">1.891</span></b>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B26 — OUTPUT CELL … B28? -->
+        <tr style="height:10pt">
+          <td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p style="margin-bottom:0cm;line-height:normal">
+              <span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black"> &nbsp;Total Weight of Powder in Slurry</span>
+            </p>
+          </td>
+          <td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt; background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
+              <span id="B28" class="output-cell" style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif;color:black;">8.561</span>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B27 — OUTPUT CELL … B29? -->
+        <tr style="height:10pt">
+          <td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p style="margin-bottom:0cm;line-height:normal">
+              <span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp;Total Weight of Water in Slurry</span>
+            </p>
+          </td>
+          <td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt; background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
+              <span id="B29" class="output-cell" style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif;color:black;">3.330</span>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B28 — OUTPUT CELL … B30? -->
+        <tr style="height:10pt">
+          <td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p style="margin-bottom:0cm;line-height:normal">
+              <span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp; Total Weight of Powder + Water in Slurry</span>
+            </p>
+          </td>
+          <td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt; background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center;line-height:normal">
+              <span id="B30" class="output-cell" style="font-size:10.0pt;font-family:'Liberation Sans',sans-serif;color:black;">11.891</span>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B29 — OUTPUT CELL … B31? -->
+        <tr style="height:10pt">
+          <td width="355" nowrap="" style="width:266.05pt;border:solid #111111 1.0pt; border-top:none;background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p style="margin-bottom:0cm;line-height:normal">
+              <span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif;color:black">&nbsp; Litres of Casting Slip or Glaze</span>
+            </p>
+          </td>
+          <td width="49" nowrap="" style="width:36.95pt;border-top:none;border-left:none; border-bottom:solid #111111 1.0pt;border-right:solid #111111 1.0pt; background:#99FEFF;padding:0cm 5.4pt 0cm 5.4pt;height:10pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center; line-height:normal">
+              <span style="font-size:10.0pt;font-family:&quot;Liberation Sans&quot;,sans-serif; color:black">6.606 </span>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B30 — FOTTER -->
+        <tr style="height:45.75pt">
+          <td width="404" colspan="2" style="width:303.0pt;border:solid black 1.0pt; border-top:none;background:#E2EFD9;padding:0cm 5.4pt 0cm 5.4pt;height:45.75pt">
+            <p align="center" style="margin-bottom:0cm;text-align:center; line-height:normal">
+              <span style="font-size:10.0pt;font-family:&quot;Arial&quot;,sans-serif; color:black">
+                <a href="mailto:nicholas.glazer@gmail.com">
+                  <span style="color:black;text-decoration:none">nicholas.glazer@gmail.com</span>
+                </a>
+              </span>
+              <span style="font-size:10.0pt;font-family:&quot;Arial&quot;,sans-serif; color:black;text-decoration:none">
+                <br>Grad.I.Ceram … IoM3<br>WhatsApp: +46 739 315 028
+              </span>
+            </p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- xxxxxxxxxxxxxxxxxxxxxxx END OF NEW CODE xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -->
+  <!-- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -->
+
+  <!-- Force Update Button -->
+  <div style="text-align:center; margin-top:12px;">
+    <button onclick="forceUpdate()" style="padding:6px 12px; font-size:0.9rem; border-radius:6px; border:1px solid #888; background:#e6e6e6;">
+      Force App Update
+    </button>
+  </div>
+
+  <!-- Version number -->
+  <!-- <div style="text-align:center; font-size:0.8rem; color:#666; margin-top:10px;"> -->
+  <!-- Version 1 -->
+  <!-- </div> -->
+  <div id="appVersion" style="text-align:center; font-size:0.8rem; color:#666; margin-top:10px;">
+    Version …
+  </div>
+
+  <!-- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -->
+  <script>
+    // Attach one listener to the entire document
+    document.addEventListener('keydown', function (e) {
+      // 1. Check if the active element has your specific class
+      if (e.target && e.target.classList.contains('comma-convert')) {
+        // 2. Detect if the comma key (188) or numpad comma (110) was pressed
+        if (e.key === ',' || e.keyCode === 188 || e.keyCode === 110) {
+          // 3. Prevent the comma from being typed
+          e.preventDefault();
+          // 4. Manually insert a dot at the current cursor position
+          const start = e.target.selectionStart;
+          const end = e.target.selectionEnd;
+          const value = e.target.value;
+          e.target.value = value.slice(0, start) + "." + value.slice(end);
+          // 5. Put the cursor back in the correct spot (after the new dot)
+          e.target.selectionStart = e.target.selectionEnd = start + 1;
+        }
+      }
+    });
+
+    function calc() {
+      // helpers
+      const get = (id) => {
         const el = document.getElementById(id);
         if (!el) return 0;
         const v = parseFloat(el.value);
         return (isFinite(v) ? v : 0);
-    };
-    const set = (id, val) => {
+      };
+      const set = (id, val) => {
         const el = document.getElementById(id);
         if (!el) return;
         if (typeof val === 'number') {
-            if (!isFinite(val)) el.innerText = 'N/A';
-            else el.innerText = val.toFixed(3);
+          if (!isFinite(val)) el.innerText = 'N/A';
+          else el.innerText = val.toFixed(3);
         } else {
-            el.innerText = val;
+          el.innerText = val;
         }
-    };
+      };
 
-    // Inputs
-    const B3 = get('B3'); // Powder density
-    const B5 = get('B5'); // Target litre weight
-    const B8 = get('B8'); // Kilos powder already weighed
-    const B13 = get('B13'); // Litres required
-    const B18 = get('B18'); // Kilos casting slip or glaze
-    const B19 = get('B19'); // Litres weight measured
+      // Inputs
+      const B3 = get('B3');  // Powder density
+      const B5 = get('B5');  // Target litre weight
+      const B8 = get('B8');  // Kilos powder already weighed
+      const B13 = get('B13'); // Litres required
+      const B18 = get('B18'); // Kilos casting slip or glaze
+      const B19 = get('B19'); // Litres weight measured
 
- /* ======================================================== */
-
-       // Calculation A
-	let  B9 = (B8 / B3) * ((B3 - B5) / (B5 - 1));
-	let B10 = (B8 + B9) / B5;
-		if (B3 === 0) {B9 = "N/A"; B10 = "N/A"; }
-		if (B5 < 1 ) {B9 = "N/A"; B10 = "N/A"; }
-
-        // Calculation A
-  /*  let B9 = "N/A", B10 = "N/A";
-    if (B3 > 0 && (B5 - 1) !== 0) {
+      /* ======================================================== */
+      // Calculation A
+      let B9 = (B8 / B3) * ((B3 - B5) / (B5 - 1));
+      let B10 = (B8 + B9) / B5;
+      if (B3 === 0) { B9 = "N/A"; B10 = "N/A"; }
+      if (B5 < 1) { B9 = "N/A"; B10 = "N/A"; }
+      // Calculation A
+      /*
+      let B9 = "N/A", B10 = "N/A";
+      if (B3 > 0 && (B5 - 1) !== 0) {
         B9 = (B8 / B3) * ((B3 - B5) / (B5 - 1));
         B10 = (B8 + B9) / B5;
-    }*/
+      }
+      */
 
- /* ======================================================== */
-
-    // Calculation B
- 
-      let  B14 = B13 * (B5 - 1) * (B3 / (B3 - 1));
-      let   B15 = (B13 * B5) - B14;
-      		if (B3 === 0) {B14 = "N/A"; B15 = "N/A"; }
-		if (B5 < 1 ) {B14 = "N/A"; B15 = "N/A"; }
-
-
-   // Calculation B
-/*    let B14 = "N/A", B15 = "N/A";
-    if (B3 > 1) { // need B3 - 1 != 0
+      /* ======================================================== */
+      // Calculation B
+      let B14 = B13 * (B5 - 1) * (B3 / (B3 - 1));
+      let B15 = (B13 * B5) - B14;
+      if (B3 === 0) { B14 = "N/A"; B15 = "N/A"; }
+      if (B5 < 1) { B14 = "N/A"; B15 = "N/A"; }
+      // Calculation B
+      /*
+      let B14 = "N/A", B15 = "N/A";
+      if (B3 > 1) { // need B3 - 1 != 0
         B14 = B13 * (B5 - 1) * (B3 / (B3 - 1));
         B15 = (B13 * B5) - B14;
-    }*/
+      }
+      */
 
- /* ======================================================== */
-
-    // Calculation C - water change first (B21..B25)
-    // compute in safe order: B21 -> B24 -> B22 -> B23 -> B25
-    
-        // water to add/remove
-        let B21 = (B18 / B19) * (B19 - B5) / (B5 - 1);
-        let B24 = B18 + B21;
-	let B22 = (B18 / B19) * (B19 - 1) * (B3 / (B3 - 1));
-	let B23 = (B24 - B22);
-        let B25 = (B24 / B5);
-	  	if (B3 === 0) {B22 = "N/A"; B23 = "N/A"; }
-		if (B5 < 1 ) {B21 = "N/A"; B22 = "N/A"; B23 = "N/A"; B24 = "N/A"; B25 = "N/A"; }
-
-     // Calculation C - water change first (B21..B25)
-    // compute in safe order: B21 -> B24 -> B22 -> B23 -> B25
- /*   let B21 = "N/A", B22 = "N/A", B23 = "N/A", B24 = "N/A", B25 = "N/A";
-    if (B19 !== 0 && (B5 - 1) !== 0) {
+      /* ======================================================== */
+      // Calculation C - water change first (B21..B25)
+      // compute in safe order: B21 -> B24 -> B22 -> B23 -> B25
+      // water to add/remove
+      let B21 = (B18 / B19) * (B19 - B5) / (B5 - 1);
+      let B24 = B18 + B21;
+      let B22 = (B18 / B19) * (B19 - 1) * (B3 / (B3 - 1));
+      let B23 = (B24 - B22);
+      let B25 = (B24 / B5);
+      if (B3 === 0) { B22 = "N/A"; B23 = "N/A"; }
+      if (B5 < 1) { B21 = "N/A"; B22 = "N/A"; B23 = "N/A"; B24 = "N/A"; B25 = "N/A"; }
+      // Calculation C - water change first (B21..B25)
+      // compute in safe order: B21 -> B24 -> B22 -> B23 -> B25
+      /*
+      let B21 = "N/A", B22 = "N/A", B23 = "N/A", B24 = "N/A", B25 = "N/A";
+      if (B19 !== 0 && (B5 - 1) !== 0) {
         // water to add/remove
         B21 = (B18 / B19) * (B19 - B5) / (B5 - 1);
         B24 = B18 + B21; // total weight after water change
         if (B3 > 1) {
-            B22 = (B18 / B19) * (B19 - 1) * (B3 / (B3 - 1));
-            // water in slurry is total minus powder
-            B23 = (typeof B24 === 'number' && typeof B22 === 'number') ? (B24 - B22) : "N/A";
+          B22 = (B18 / B19) * (B19 - 1) * (B3 / (B3 - 1));
+          // water in slurry is total minus powder
+          B23 = (typeof B24 === 'number' && typeof B22 === 'number') ? (B24 - B22) : "N/A";
         }
         B25 = (typeof B24 === 'number' && B5 !== 0) ? (B24 / B5) : "N/A";
-    }  */
+      }
+      */
 
- /* ======================================================== */
-
-    // Calculation C - powder adjustment (B27..B31)
-   
-        let B27 = (B18 / B19) * B3 * (B19 - B5) / (B5 - B3);
-        let B28 = B22 + B27; // new powder total
-        let B30 = B18 + B27;
-        let B29 = B30 - B28; 
-        let B31 = B30 / B5;
-	  	if (B3 === 0) {	B27 = "N/A"; B28 = "N/A"; B30 = "N/A"; B29 = "N/A"; B31 = "N/A"; }
-	  	if (B5 < 1 ) {B27 = "N/A"; B28 = "N/A"; B30 = "N/A"; B29 = "N/A"; B31 = "N/A"; }
-
-    // Calculation C - powder adjustment (B27..B31)
-   
-/*    let B27 = "N/A", B28 = "N/A", B29 = "N/A", B30 = "N/A", B31 = "N/A";
-    if (B3 > 0 && B19 !== 0 && (B5 - B3) !== 0) {
+      /* ======================================================== */
+      // Calculation C - powder adjustment (B27..B31)
+      let B27 = (B18 / B19) * B3 * (B19 - B5) / (B5 - B3);
+      let B28 = B22 + B27; // new powder total
+      let B30 = B18 + B27;
+      let B29 = B30 - B28;
+      let B31 = B30 / B5;
+      if (B3 === 0) {
+        B27 = "N/A";
+        B28 = "N/A";
+        B30 = "N/A";
+        B29 = "N/A";
+        B31 = "N/A";
+      }
+      if (B5 < 1) {
+        B27 = "N/A";
+        B28 = "N/A";
+        B30 = "N/A";
+        B29 = "N/A";
+        B31 = "N/A";
+      }
+      // Calculation C - powder adjustment (B27..B31)
+      /*
+      let B27 = "N/A", B28 = "N/A", B29 = "N/A", B30 = "N/A", B31 = "N/A";
+      if (B3 > 0 && B19 !== 0 && (B5 - B3) !== 0) {
         B27 = (B18 / B19) * B3 * (B19 - B5) / (B5 - B3);
         if (typeof B22 === 'number') {
-            B28 = B22 + B27; // new powder total
+          B28 = B22 + B27; // new powder total
         }
         // define B30 as previous total (B24) plus powder change B27 (reasonable assumption)
         if (typeof B24 === 'number' && typeof B27 === 'number') {
-            B30 = B18 + B27;
-            if (typeof B28 === 'number') {
-                B29 = B30 - B28; // water becomes total minus powder
-            } else {
-                B29 = "N/A";
-            }
-            B31 = B30 / B5; // maybe total kilos after powder change (matches original)
+          B30 = B18 + B27;
+          if (typeof B28 === 'number') {
+            B29 = B30 - B28; // water becomes total minus powder
+          } else {
+            B29 = "N/A";
+          }
+          B31 = B30 / B5; // maybe total kilos after powder change (matches original)
         }
-    } */
+      }
+      */
 
- /* ======================================================== */
+      /* ======================================================== */
+      // Update UI
+      set('B9', B9);
+      set('B10', B10);
+      set('B14', B14);
+      set('B15', B15);
+      set('B21', B21);
+      set('B22', B22);
+      set('B23', B23);
+      set('B24', B24);
+      set('B25', B25);
+      set('B27', B27);
+      set('B28', B28);
+      set('B29', B29);
+      set('B30', B30);
+      set('B31', B31);
+    }
 
-    // Update UI
-    set('B9', B9); set('B10', B10);
-    set('B14', B14); set('B15', B15);
-    set('B21', B21); set('B22', B22); set('B23', B23); set('B24', B24); set('B25', B25);
-    set('B27', B27); set('B28', B28); set('B29', B29); set('B30', B30); set('B31', B31);
-}
+    // Run immediately
+    calc();
+  </script>
 
-// Run immediately
-calc();
-</script>
-
-
- <!-- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -->
-
-<script>
-function forceUpdate() {
-  // If a service worker is controlling the page, ask it to update
-  if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
-    navigator.serviceWorker.getRegistration().then(reg => {
-      if (reg) {
-        reg.update().then(() => {
-          // After updating, reload the page to activate the new version
-          location.reload(true);
+  <!-- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -->
+  <script>
+    function forceUpdate() {
+      // If a service worker is controlling the page, ask it to update
+      if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
+        navigator.serviceWorker.getRegistration().then(reg => {
+          if (reg) {
+            reg.update().then(() => {
+              // After updating, reload the page to activate the new version
+              location.reload(true);
+            });
+          } else {
+            // No service worker found — just reload normally
+            location.reload(true);
+          }
         });
       } else {
-        // No service worker found — just reload normally
+        // Browser doesn't support service workers — fallback reload
         location.reload(true);
       }
+    }
+  </script>
+
+  <script>
+    function requestAppVersion() {
+      if (!navigator.serviceWorker || !navigator.serviceWorker.controller) {
+        document.getElementById("appVersion").textContent = "Version (no SW)";
+        return;
+      }
+      // Ask the service worker for its version
+      navigator.serviceWorker.controller.postMessage("GET_VERSION");
+      // Listen for the reply
+      navigator.serviceWorker.addEventListener("message", event => {
+        if (event.data && event.data.version) {
+          document.getElementById("appVersion").textContent = "Version " + event.data.version;
+        }
+      });
+    }
+
+    // Run after page loads
+    window.addEventListener("load", requestAppVersion);
+  </script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      function updateOnlineStatus() {
+        const banner = document.getElementById("offlineBanner");
+        const container = document.querySelector(".calculator-container");
+        if (navigator.onLine) {
+          banner.style.display = "none";
+          if (container) container.style.marginTop = "0px";
+        } else {
+          banner.style.display = "block";
+          if (container) container.style.marginTop = "40px";
+        }
+      }
+
+      // Listen for connection changes
+      window.addEventListener("online", updateOnlineStatus);
+      window.addEventListener("offline", updateOnlineStatus);
+
+      // Run once on load
+      updateOnlineStatus();
     });
-  } else {
-    // Browser doesn't support service workers — fallback reload
-    location.reload(true);
-  }
-}
-</script>
+  </script>
 
-
-<script>
-function requestAppVersion() {
-  if (!navigator.serviceWorker || !navigator.serviceWorker.controller) {
-    document.getElementById("appVersion").textContent = "Version (no SW)";
-    return;
-  }
-
-  // Ask the service worker for its version
-  navigator.serviceWorker.controller.postMessage("GET_VERSION");
-
-  // Listen for the reply
-  navigator.serviceWorker.addEventListener("message", event => {
-    if (event.data && event.data.version) {
-      document.getElementById("appVersion").textContent =
-        "Version " + event.data.version;
-    }
-  });
-}
-
-// Run after page loads
-window.addEventListener("load", requestAppVersion);
-</script>
-
-
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  function updateOnlineStatus() {
-    const banner = document.getElementById("offlineBanner");
-    const container = document.querySelector(".calculator-container");
-
-    if (navigator.onLine) {
-      banner.style.display = "none";
-      container.style.marginTop = "0px";
-    } else {
-      banner.style.display = "block";
-      container.style.marginTop = "40px";
-    }
-  }
-
-  // Listen for connection changes
-  window.addEventListener("online", updateOnlineStatus);
-  window.addEventListener("offline", updateOnlineStatus);
-
-  // Run once on load
-  updateOnlineStatus();
-});
-</script>
-
-  
-<!-- Update Toast -->
-<div id="updateToast" 
-     style="
-       display:none;
-       position:fixed;
-       bottom:20px;
-       left:50%;
-       transform:translateX(-50%);
-       background:#333;
-       color:#fff;
-       padding:10px 16px;
-       border-radius:6px;
-       font-size:0.9rem;
-       box-shadow:0 2px 6px rgba(0,0,0,0.3);
-       z-index:99999;
-     ">
-  Checking for updates…
-</div>
-
- <!-- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -->
-
+  <!-- Update Toast -->
+  <div id="updateToast" style="
+    display:none;
+    position:fixed;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+    background:#333;
+    color:#fff;
+    padding:10px 16px;
+    border-radius:6px;
+    font-size:0.9rem;
+    box-shadow:0 2px 6px rgba(0,0,0,0.3);
+    z-index:99999;
+  ">
+    Checking for updates…
+  </div>
+  <!-- xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx -->
 </body>
-
 </html>
-
-
-
