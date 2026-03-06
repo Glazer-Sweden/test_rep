@@ -1,17 +1,580 @@
-<script>
-  function calc() {
-    // Your existing calculation logic goes here
-    ...
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="UTF-8">
+  <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0"> -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Slurry_Mixing_Calculator</title>
 
-    // Highlight negative numbers
-    const cells = document.querySelectorAll('.number-cell');
-    cells.forEach(cell => {
-      const value = parseFloat(cell.innerText);
-      if (value < 0) {
-        cell.style.color = 'red';
-      } else {
-        cell.style.color = ''; // Reset to default color
-      }
+  <!-- PWA -->
+  <link rel="manifest" href="/Slurry_Mixing_Calculator/manifest.json">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="/Slurry_Mixing_Calculator/icons/icon-192.png">
+
+  <!-- Service worker registration -->
+  <script>
+  /*
+    IMPORTANT:
+    - This must match the filename of your service worker.
+    - For Version 2, the file is sw-v2.js.
+    - When you release Version 2, rename to sw-v2.js and update this line.
+  */
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/Slurry_Mixing_Calculator/sw-v1.js").then(reg => {
+      reg.onupdatefound = () => {
+        const newWorker = reg.installing;
+        newWorker.onstatechange = () => {
+          if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+            const refresh = confirm("A new version of Slurry Calculator is available. Reload now?");
+            if (refresh) window.location.reload();
+          }
+        };
+      };
     });
   }
-</script>
+  </script>
+
+  <!-- Page CSS -->
+
+  <style>
+    /* -------------------------------------- */
+    /* 1. CSS Resets & Base Styles            */
+    /*    (General, catch-all rules)          */
+    /* -------------------------------------- */
+
+    /* Global box-sizing for consistent box model behavior */
+    /*		* {
+        		box-sizing: border-box;
+    		} */
+
+	html {
+  		box-sizing: border-box; font-size: 14px; /* Now, 1rem will equal 13.3333px *//* Step 1: Set the root to border-box */
+	}
+
+	*,
+	*::before,
+	*::after {
+  	box-sizing: inherit; /* Step 2: Make all elements inherit this setting */
+	}
+
+    /* Base body styles for typography and overall page layout */
+    body {
+        font-family: "Liberation Sans", "Arial", system-ui, -apple-system, sans-serif;
+        font-size: 1rem;
+        /* These three lines of code are used to center the webpage on the computer screen */
+        display: flex;
+        flex-direction: column; /* Stack children vertically */
+        align-items: center;    /* Center children horizontally */
+    }
+
+    /* -------------------------------------- */
+    /* 2. Layout & Structure Styles           */
+    /*    (High-level layout, e.g., table, wrappers) */
+    /* -------------------------------------- */
+
+    /* Table layout: keep original width but make it responsive */
+    table {
+        max-width: 393px; /* Defines the max width for the table */
+        width: 100%;    /* Ensures it takes full width up to max-width */
+        border: solid black 0.075rem;
+        /* It's good practice to place table-related layout here */
+    }
+
+    /* Basic styling for all table data cells */
+    table td {
+        border: solid black 0.075rem;
+    }
+
+    /* Reset margin for paragraphs within table cells */
+    table td p {
+        margin: 0rem 0rem;
+    }
+
+    /* -------------------------------------- */
+    /* 3. Component-Specific Styles           */
+    /*    (Styles for reusable UI components like buttons, specific table cells) */
+    /* -------------------------------------- */
+	  
+    /* Styles for the transfer button */
+    .transfer-button {
+        float: center; /* Note: 'center' is not a valid value for float. Use margin: 0 auto; with display: block; or flexbox/grid for centering. */
+        margin-left: 0.6rem;
+        margin-right: 0.375rem;
+        padding: 0.375rem 0.90rem;
+        border: none;
+        border-radius: 0.375rem;
+        background-color: #007bff;  /* Primary action blue */
+        color: white;
+        font-weight: normal;
+        font-size: 0.8rem;
+        cursor: pointer;
+        box-shadow: 0 0.15rem 0.30rem rgba(0,0,0,0.2);
+        transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    /* Interaction states for the transfer button */
+    .transfer-button:hover,
+    .transfer-button:focus {
+        background-color: #0056b3; /* Darker blue on hover/focus */
+        box-shadow: 0 0.30rem 0.6rem rgba(0,0,0,0.3); /* More pronounced shadow */
+        outline: none; /* Remove default focus outline if you provide your own visual cue */
+    }
+
+    .transfer-button:active {
+        background-color: #004085; /* Even darker blue when clicked */
+        box-shadow: 0 0.075rem 0.15rem rgba(0,0,0,0.2); /* Smaller shadow to simulate press */
+        transform: translateY(0.075rem);  /* Slight vertical shift */
+    }
+
+    /* Styles for various table header titles */
+    .table-header-title-1 {
+        height: 1rem;
+        background: #bae18f;
+        text-align: center;
+        line-height: normal;
+        padding-top: 0.45rem;
+        padding-BOTTOM: 0.15rem;
+        font-size: 1.2rem;
+        font-weight: bold;
+        white-space: nowrap;
+    }
+
+    .table-header-title-2 {
+        height: 1rem;
+        background: #bae18f;
+        text-align: center;
+        line-height: normal;
+        padding-top: 0rem;
+        padding-bottom: 0.15rem;
+        font-size: 1.1rem;
+        font-weight: normal;
+        white-space: nowrap;
+    }
+
+    .table-header-title-3 {
+        height: 1rem;
+        background: #bae18f;
+        padding: 0.1;
+        text-align: center;
+        line-height: normal;
+        padding-top: 0.15rem;
+        padding-bottom: 0rem;
+        padding-left: 0rem;
+        font-size: 1.1rem;
+        font-weight: normal;
+        white-space: nowrap;
+    }
+
+    .table-header-title-4 {
+        height: 1rem;
+        background: #bae18f;
+        text-align: center;
+        line-height: normal;
+        padding-top: 0rem;
+        padding-bottom: 0.15rem;
+        padding-left: 0rem;
+        padding-right: 0rem;
+        font-size: 1.1rem;
+        font-weight: normal;
+        white-space: nowrap;
+    }
+
+    .table-header-title-5 {
+        height: 1rem;
+        text-align: center;
+        line-height: normal;
+        padding-top: 0.15rem;
+        padding-bottom: 0.15rem;
+        padding-left: 0rem;
+        padding-right: 0rem;
+        font-size: 0.9rem;
+        font-weight: normal;
+        white-space: nowrap;
+        background-color: lightgray;
+    }
+
+    /* Styles for specific table data cells and inputs */
+
+    table td.input-descriptions {
+        background-color: yellow;
+        /* text-indent: 0.075rem; */
+	padding: 0.30rem 0 0.30rem 0.375rem;
+        width: 84%;
+    }
+
+    table td.input {
+        background-color: yellow;
+    }
+
+    table td input.input-cell {
+        width: auto; /* Good to have a default */
+        width: 98%; /* More specific, overrides 'auto' */
+        margin: 0.075rem 0.075rem;
+        background-color: yellow;
+        text-align: right;
+    }
+
+    /*Class To Do Text*/
+    .todo-greens1 {
+        background: #00FF2B;
+       padding: 0.30rem 0 0.30rem 0.375rem;
+    }
+
+    /*Class To Do Value*/
+    .todo-greens2 {
+        text-align: end;
+        font-variant-numeric: tabular-nums;
+        background: #00FF2B;
+		/* background-color:" + if number(*) < 0 then
+            "red"
+        end + "*/ 
+		
+        /* padding: 0.30rem 0.075rem; */
+	padding: 0.30rem 0.225rem 0.30rem 0rem;
+    }
+
+    /* Output Text Description */
+    .output-text {
+        background: #99FEFF;
+        /* padding: 0.30rem 0.075rem; */
+	padding: 0.30rem 0 0.30rem 0.375rem;
+    }
+
+    /* Output Value For Information */
+    .output-value-for-information {
+        text-align: end;
+        font-variant-numeric: tabular-nums;
+        background: #99FEFF;
+        /* padding: 0.30rem 0.075rem; */
+	padding: 0.30rem 0.225rem 0.30rem 0rem;
+    }
+
+    /* Styles for labels within input descriptions */
+    lable { /* Note: this should be 'label' (lowercase). 'lable' is a typo. */
+        width: 100%;
+    }
+
+    td.input-descriptions label {
+        display: block;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        padding: 0;
+        margin: 0;
+    }
+
+    td.input-descriptions {
+        padding: 0;
+    }
+
+    /* -------------------------------------- */
+    /* 4. Media Queries                       */
+    /*    (Responsive adjustments)            */
+    /* -------------------------------------- */
+
+
+    /* Offline banner spacing with main content */
+    #offlineBanner {
+        /* width: 100%; */
+	/* width: 393px */
+    }
+   
+/* Mobile tweaks (styles that only apply below 393px) */
+    @media (max-width: 393px) {
+        body {
+            font-size: 1rem;
+        }
+
+        /* The general 'table { width: 100%; }' is already defined,
+           so this specific one inside the media query is redundant
+           unless you want to override it to something else here.
+           If it's meant to ensure it's 100% on small screens,
+           it's already covered by the global table rule. */
+        /* table {
+            width: 100%;
+        } */
+    }
+
+/* Responsive calculator container adjustments */
+.calculator-container {
+    width: 100%;
+    max-width: 393px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* .negative {
+   color: red;
+}*/
+
+/* .negative-number {
+  color: red;
+ /* You can easily add more styles here later */
+} */
+
+// 1. Select the element(s) containing your text
+const container = document.querySelector('.content-area');
+
+// 2. Define a Regex for negative numbers (e.g., -10 or -5.50)
+const negativeRegex = /(-\d+(\.\d+)?)/g;
+
+// 3. Replace the plain text with HTML spans
+container.innerHTML = container.innerHTML.replace(
+  negativeRegex, 
+  '<span class="negative-highlight">$1</span>'
+);
+	  
+</style>
+
+</head>
+
+<body>
+
+<div id="offlineBanner" style="display: block; text-align: center; background: rgb(255, 204, 0); padding: 0rem; font-size: 1.15rem; top: 0.75rem; z-index: 9999; position: initial; border: 0.15rem solid red; right: 0rem;">
+  You are offline ...  Some features may be limited.
+</div>
+
+ <!--  <div id="offlineBanner" style="display: none; text-align:center; background: rgb(255, 204, 0); padding: 0.225rem 0rem; font-size: 0.9rem; width: 393px; top: 0rem; z-index:9999;">
+    You are offline ... Some features may be limited. -->
+  </div>
+
+<!-- xxx START OF NEW CODE xxx -->
+
+  <div class="calculator-container" style="margin-top: 0rem;">  <!-- The ... align="center" ... moves the webpage to the center of the screen -->
+
+    <table style="border-collapse:collapse;">
+    <!-- <table style="border-collapse:collapse; cellspacing:0; cellpadding:0;"> -->
+
+   	<thead>
+    		<tr>
+      			<th colspan="2" class="table-header-title-1">
+        			Slurry Calculations - Glazes &amp; Casting Slips
+      			</th>
+    		</tr>
+		<tr>		
+      			<th colspan="2" class="table-header-title-2">
+        			Edit Numbers in Yellow Cells - KILOS
+      			</th>
+		</tr>
+
+<!-- Empty Line -->
+		<tr><td colspan="2" style="background:white;height:1.5rem"></td></tr>
+
+<!-- Input Base Data Needed For  A B C D -->
+		<tr>
+      			<th colspan="2" class="table-header-title-3">
+        			STEP 1
+      			</th>
+		</tr>
+		<tr>
+      			<th colspan="2" class="table-header-title-4">
+        			  Fill in basic information.
+      			</th>
+		</tr>
+
+  	</thead>
+
+      <tbody>
+
+        <!-- B4 — INPUT CELL … B5? -->
+        <tr class="input">
+		<td class="input-descriptions"><label for="B5">Target Litre Weight<br>(Need for all calculations)</label></td>
+	 	<td class="input"><span><input id="B5" value="1.800" type="text" inputmode="decimal" class="comma-convert input-cell" oninput="calc()"></span> </td>
+	</tr>
+
+        <!-- B3 — INPUT CELL -->
+        <tr class="input">
+		<td class="input-descriptions"><label for="B3">Powder Density<br>(Needed for calculations A and B<br>&nbsp;&nbsp;Not necessary for calculations C and D)</label></td>
+		<td class="input"><span><input id="B3" value="2.613" type="text" inputmode="decimal" class="comma-convert input-cell" oninput="calc()"></span> </td>
+	</tr>
+
+		<tr>
+			<th colspan="2" class="table-header-title-5">
+        			If you do not know the Powder Density, use Calculation E
+      			</th>
+		</tr>
+	
+<!-- Empty Line -->
+	<tr><td colspan="2" style="background:white;height:1.5rem"></td></tr>
+
+		<tr>
+      			<th colspan="2" class="table-header-title-3">
+        			STEP 2
+      			</th>
+		</tr>
+		<tr>
+      			<th colspan="2" class="table-header-title-4">
+        			Choose between calculation A, B, C or D.
+      			</th>
+		</tr>
+	
+<!-- Empty Line -->
+	<!-- <tr><td colspan="2" style="background:white;height:0.75rem"></td></tr> -->
+
+<!-- Calculation A -->
+
+        <tr style="height:1.125rem">
+          <td colspan="2" style="background:#F0B64E;padding:0cm 0.075rem 0rem 0.075rem;height:1.125rem">
+            <p style="margin-bottom:0cm;text-align:center;line-height:normal">
+              <b><span>Calculation A</span></b>
+            </p>
+          </td>
+        </tr>
+
+        <!-- Water Addition For Given Powder Weight -->
+        <tr style="height:1.125rem">
+          <td colspan="2" style=";background:#F2A068;padding:0cm 0.075rem 0rem 0.075rem;height:0.75rem">
+            <p style="margin-bottom:0cm;text-align:center;line-height:normal">
+              <b><span>Water Needed For Given Powder Weight</span></b>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B7 — INPUT CELL … B8? -->
+	<tr class="input">
+		<td class="input-descriptions"><label for="B8">Kilos of POWDER Already Weighed</label></td>
+		<td class="input"><span><input id="B8" value="1.296" type="text" inputmode="decimal" class="comma-convert input-cell" oninput="calc()"></span> </td>
+	</tr>
+
+        <!-- B8 — OUTPUT CELL … B9? -->
+        <tr><td class="todo-greens1"><span>Kilos of WATER to Weigh &amp; Mix</span></td>
+		<td class="todo-greens2"><span id="B9">0.504</span></td></tr>
+
+        <!-- B9 — OUTPUT CELL … B10 -->
+        <tr><td class="output-text"><span>Litres of Casting Slip or Glaze (Calculated)</span></td>
+		<td class="output-value-for-information"><span id="B10">1.000</span></td></tr>
+
+<!-- Empty Line -->
+	<tr><td colspan="2" style="background:white;height:0.75rem"></td></tr>
+
+<!-- Calculation B -->
+
+        <tr style="height:1.125rem">
+          <td colspan="2" style="background:#F0B64E;padding:0cm 0.075rem 0rem 0.075rem;height:0.75rem">
+            <p style="margin-bottom:0cm;text-align:center;line-height:normal">
+              <b><span>Calculation B</span></b>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B11 — Water & Powder For Target Slurry Volume -->
+        <tr style="height:1.125rem">
+          <td colspan="2" style="background:#F2A068;padding:0cm 0.075rem 0rem 0.075rem;">
+            <p style="margin-bottom:0cm;text-align:center;line-height:normal">
+              <b><span>Water &amp; Powder Needed For Given Volume</span></b>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B12 — INPUT CELL … B13 -->
+	<tr class="input">
+   		 <td class="input-descriptions"><label for="B13">Litres Of Casting Slip/Glaze Required</label></td>
+		 <td class="input"><span><input id="B13" value="10.000" type="text" inputmode="decimal" class="comma-convert input-cell" oninput="calc()"></span>	</td>
+	</tr>
+
+        <!-- B13 — OUTPUT CELL … B14 -->
+        <tr><td class="todo-greens1"><span>Kilos of POWDER to Weigh &amp; Mix</span></td>
+		<td class="todo-greens2"><span id="B14">12.960</span></td></tr>
+
+        <!-- B14 — OUTPUT CELL … B15 -->
+        <tr><td class="todo-greens1"><span>Kilos of WATER to Weigh &amp; Mix</span></td>
+		<td class="todo-greens2"><span id="B15">5.040</span></td></tr>
+
+<!-- Empty Line -->
+	<tr><td colspan="2" style="background:white;height:0.75rem"></td></tr>
+
+<!-- Calculation C -->
+
+        <tr style="height:1.125rem">
+          <td colspan="2" style="background:#F0B64E;padding:0cm 0.075rem 0rem 0.075rem;height:0.75rem">
+            <p style="margin-bottom:0cm;text-align:center;line-height:normal">
+              <b><span> Calculation C</span></b>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B16 — Calculation For NEW Target Litre Weight -->
+        <tr style="height:1.125rem">
+          <td colspan="2" style="background:#F2A068;padding:0cm 0.075rem 0rem 0.075rem;height:0.75rem">
+            <p  style="margin-bottom:0cm;text-align:center;line-height:normal">
+              <b><span>Water or Powder Adjustments For Target Litre Weight</span></b>
+            </p>
+          </td>
+        </tr>
+
+        <!-- B17 — INPUT CELL … B18? -->
+        <tr class="input">
+    			<td class="input-descriptions"><label for="B18">Kilos of Casting Slip or Glaze</label></td>
+          		<td class="input"><span><input id="B18" value="10.000" type="text" inputmode="decimal" class="comma-convert input-cell" oninput="calc()"></span>
+    		</td>
+	</tr>
+
+        <!-- B18 — INPUT CELL … B19? -->
+        <tr class="input">
+    			<td class="input-descriptions"><label for="B19">Litre Weight Measured</label></td>
+              		<td class="input"><span><input id="B19" value="1.700" type="text" inputmode="decimal" class="comma-convert input-cell" oninput="calc()"></span>
+    		</td>
+	</tr>
+
+<!-- Empty Line -->
+	<tr><td colspan="2" style="background:#F0B64E;height:0.188rem"></td></tr>
+
+        <!-- B19 — OUTPUT CELL … B21? -->
+        <tr><td class="todo-greens1"><span>Water to Add or Remove</span></td>
+		<td class="todo-greens2"><span id="B21">-0.735</span></td></tr>
+
+        <!-- B20 — OUTPUT CELL … B22? -->
+        <tr><td class="output-text"><span>Total Weight of Powder in Slurry</span></td>
+		<td class="output-value-for-information"><span id="B22">6.670</span></td></tr>
+
+        <!-- B21 — OUTPUT CELL … B23? -->
+        <tr><td class="output-text"><span>Total Weight of Water in Slurry</span></td>
+		<td class="output-value-for-information"><span id="B23">2.594</span></td></tr>
+
+        <!-- B22 — OUTPUT CELL … B24? -->
+        <tr><td class="output-text"><span>Total Weight of Powder + Water in Slurry</span></td>
+		<td class="output-value-for-information"><span id="B24">9.265</span></td></tr>
+
+        <!-- B23 — OUTPUT CELL … B25? -->
+        <tr><td class="output-text"><span>Litres of Casting Slip or Glaze</span></td>
+		<td class="output-value-for-information"><span id="B25">5.147</span></td></tr>
+
+<!-- EMPTY LINE -->
+	<tr><td colspan="2" style="background:#F0B64E;height:0.188rem"></td></tr>
+
+        <!-- B25 — OUTPUT CELL … B27? -->
+        <tr><td class="todo-greens1"><span>Powder to Add or Remove</span></td>
+		<td class="todo-greens2"><span id="B27">1.891</span></td></tr>
+
+        <!-- B26 — OUTPUT CELL … B28? -->
+        <tr><td class="output-text"><span>Total Weight of Powder in Slurry</span></td>
+		<td class="output-value-for-information"><span id="B28">8.561</span></td></tr>
+
+        <!-- B27 — OUTPUT CELL … B29? -->
+        <tr><td class="output-text"><span>Total Weight of Water in Slurry</span></td>
+		<td class="output-value-for-information"><span id="B29">3.330</span></td></tr>
+
+        <!-- B28 — OUTPUT CELL … B30? -->
+        <tr><td class="output-text"><span>Total Weight of Powder + Water in Slurry</span></td>
+		<td class="output-value-for-information"><span id="B30">11.891</span></td></tr>
+
+        <!-- B29 — OUTPUT CELL … B31? -->
+        <tr><td class="output-text"><span>Litres of Casting Slip or Glaze</span></td>
+		<td class="output-value-for-information"><span id="B31">6.606</span></td></tr>
+
+<!-- Empty Line -->
+	<tr><td colspan="2" style="background:white;height:0.75rem"></td></tr>
+
+<!-- Calculation D -->
+
+        <!-- Pre-Calculation For D (when it's impossible to weight the slurry) -->
+<tr style="height:1.125rem">
+          <td colspan="2" style="background:#F0B64E;padding:0cm 0.075rem 0rem 0.075rem;height:0.75rem">
+            <p style="margin-bottom:0cm;text-align:center;line-height:normal">
+              <b><span> Calculation D</span></b>
+            </p>
+          </td>
+        </tr>
+
+<tr style="height:1.125rem">
+          <td colspan="2" style="background:#F2A068;padding:0cm 0.075rem 0rem 0.075rem;height:0.75rem">
+            <p style="margin-bottom:0cm;text-align:center;
