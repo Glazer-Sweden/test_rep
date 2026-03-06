@@ -224,9 +224,10 @@
         text-align: end;
         font-variant-numeric: tabular-nums;
         background: #00FF2B;
-		background-color:" + if number(P1) < 0 then
+		/* background-color:" + if number(*) < 0 then
             "red"
-        end + "
+        end + "*/ 
+		
         /* padding: 0.30rem 0.075rem; */
 	padding: 0.30rem 0.225rem 0.30rem 0rem;
     }
@@ -742,6 +743,15 @@
 
   <script>
 
+  <-- Make Negative Red -->
+	  
+  document.querySelectorAll('td').forEach(cell => {
+  if (cell.innerText.trim().startsWith('-')) {
+    cell.style.color = 'red';
+  }
+});
+
+
   <!--
 Source - https://stackoverflow.com/a/68863075
 Posted by Michael Larsson
@@ -756,7 +766,7 @@ Retrieved 2026-03-06, License - CC BY-SA 4.0
         }
 }
 
-MakeNegative();
+MakeNegative(); -->
 
   // Global keydown handler for comma-to-dot conversion
   document.addEventListener('keydown', function (e) {
@@ -1097,6 +1107,7 @@ document.querySelectorAll('label[for]').forEach(label => {
 		</script>
 	</body>
 </html>
+
 
 
 
